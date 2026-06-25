@@ -1,0 +1,33 @@
+# dépendances et build (régénérés dans l'image)
+node_modules
+dist
+.npm
+
+# git
+.git
+.gitignore
+
+# docker
+Dockerfile
+.dockerignore
+compose.yaml
+docker-compose*.yml
+
+# env / secrets
+.env
+.env.*
+
+# couverture de tests
+coverage
+
+# config IDE / éditeur
+.vscode
+.idea
+
+# logs et divers
+*.log
+npm-debug.log*
+.node_repl_history
+
+# docs
+README.md
