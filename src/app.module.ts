@@ -4,6 +4,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
+import { ArtistsModule } from './artists/artists.module';
+import { ArtworksModule } from './artworks/artworks.module';
+import { ExhibitionsModule } from './exhibitions/exhibitions.module';
+import { SalesModule } from './sales/sales.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 @Module({
@@ -27,6 +31,10 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
     }),
     AuthModule,
     UserModule,
+    ArtistsModule,
+    ArtworksModule,
+    ExhibitionsModule,
+    SalesModule,
   ],
   providers: [
     {
