@@ -19,7 +19,7 @@ describe('envValidationSchema', () => {
     expect(value.NODE_ENV).toBe('development');
     expect(value.PORT).toBe(3000);
     expect(value.DB_PORT).toBe(5432);
-    expect(value.JWT_EXPIRES_IN).toBe('60s');
+    expect(value.JWT_EXPIRES_IN).toBe('15m');
   });
 
   it('rejects a missing JWT_SECRET', () => {
