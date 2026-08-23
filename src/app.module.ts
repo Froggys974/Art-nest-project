@@ -9,6 +9,7 @@ import { ArtworksModule } from './artworks/artworks.module';
 import { ExhibitionsModule } from './exhibitions/exhibitions.module';
 import { SalesModule } from './sales/sales.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { RolesGuard } from './auth/roles.guard';
 import { CommonModule } from './common/common.module';
 import { HealthModule } from './health/health.module';
 import { envValidationSchema } from './config/env.validation';
@@ -46,6 +47,10 @@ import { envValidationSchema } from './config/env.validation';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

@@ -8,7 +8,7 @@ import { SafeUser } from 'src/user/types/safe-user.type';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
-    private readonly configService: ConfigService,
+    configService: ConfigService,
     private readonly userService: UserService,
   ) {
     super({
@@ -26,7 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       throw new UnauthorizedException();
     }
-    const { password, ...safeUser } = user;
+    const { password, refreshTokenHash, ...safeUser } = user;
     return safeUser;
   }
 }

@@ -7,6 +7,8 @@ describe('envValidationSchema', () => {
     POSTGRES_PASSWORD: 'secret',
     POSTGRES_DB: 'nest',
     JWT_SECRET: 'a-secret-of-at-least-16-chars',
+    JWT_REFRESH_SECRET: 'another-secret-of-16-chars',
+    ADMIN_PASSWORD: 'admin-password',
   };
 
   it('accepts a complete environment and applies defaults', () => {
