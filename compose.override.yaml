@@ -1,0 +1,43 @@
+services:
+  api:
+    build:
+      context: .
+      target: dev
+    tty: true
+    stdin_open: true
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./src:/home/node/src
+      - ./test:/home/node/test
+    networks:
+      - projet-nest-art
+
+  postgres:
+    container_name: postgres
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - projet-nest-art
+
+  adminer:
+    container_name: adminer
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - projet-nest-art
+
+networks:
+  projet-nest-art:
+    driver: bridge
+volumes:
+  postgres_data:
