@@ -4,8 +4,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { UserService } from 'src/user/user.service';
 import { UserRole } from 'src/user/user-role.enum';
 import { SafeUser } from 'src/user/types/safe-user.type';
@@ -26,6 +26,7 @@ export class ArtistsService {
     @InjectRepository(Artwork)
     private readonly artworkRepository: Repository<Artwork>,
     private readonly userService: UserService,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
   async create(dto: CreateArtistDto, galleryId: number): Promise<Artist> {
@@ -73,18 +74,21 @@ export class ArtistsService {
     }
     artist.galleryId = galleryId;
     artist.entryDate = today();
-    // Sold artworks keep their original galleryId so past sales/commission
-    // reports stay attributed to the gallery that actually sold them.
-    await this.artworkRepository
-      .createQueryBuilder()
-      .update(Artwork)
-      .set({ galleryId })
-      .where('artistId = :id AND status != :sold', {
-        id,
-        sold: ArtworkStatus.SOLD,
-      })
-      .execute();
-    return this.artistRepository.save(artist);
+
+    return this.dataSource.transaction(async (manager) => {
+      // Sold artworks keep their original galleryId so past sales/commission
+      // reports stay attributed to the gallery that actually sold them.
+      await manager
+        .createQueryBuilder()
+        .update(Artwork)
+        .set({ galleryId })
+        .where('artistId = :id AND status != :sold', {
+          id,
+          sold: ArtworkStatus.SOLD,
+        })
+        .execute();
+      return manager.getRepository(Artist).save(artist);
+    });
   }
 
   async linkUser(

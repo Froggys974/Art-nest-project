@@ -113,6 +113,15 @@ describe('ExhibitionsService', () => {
     ).rejects.toThrow(BusinessRuleViolationException);
   });
 
+  it('rejects an exhibition ending before it starts', async () => {
+    await expect(
+      service.create(
+        { ...dto, startDate: '2026-03-31', endDate: '2026-03-01' },
+        10,
+      ),
+    ).rejects.toThrow(BusinessRuleViolationException);
+  });
+
   it('rejects an exhibition referencing a missing artwork', async () => {
     artworkRepository.findBy.mockResolvedValue([
       { id: 1, galleryId: 10, status: ArtworkStatus.AVAILABLE },

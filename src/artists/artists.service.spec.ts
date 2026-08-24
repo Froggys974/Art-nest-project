@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm';
 import { UserService } from '../user/user.service';
 import { UserRole } from '../user/user-role.enum';
 import { Artwork } from '../artworks/artwork.entity';
@@ -24,6 +24,7 @@ describe('ArtistsService', () => {
     execute: jest.Mock;
   };
   let userService: { findOneBy: jest.Mock };
+  let dataSource: { transaction: jest.Mock };
 
   const gallery = {
     userId: 10,
@@ -50,6 +51,13 @@ describe('ArtistsService', () => {
       createQueryBuilder: jest.fn(() => queryBuilder),
     };
     userService = { findOneBy: jest.fn() };
+    const manager = {
+      createQueryBuilder: jest.fn(() => queryBuilder),
+      getRepository: jest.fn(() => artistRepository),
+    };
+    dataSource = {
+      transaction: jest.fn((cb: (manager: unknown) => unknown) => cb(manager)),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -57,6 +65,7 @@ describe('ArtistsService', () => {
         { provide: getRepositoryToken(Artist), useValue: artistRepository },
         { provide: getRepositoryToken(Artwork), useValue: artworkRepository },
         { provide: UserService, useValue: userService },
+        { provide: getDataSourceToken(), useValue: dataSource },
       ],
     }).compile();
 
@@ -122,12 +131,30 @@ describe('ArtistsService', () => {
 
     expect(artist.galleryId).toBe(20);
     expect(artist.entryDate).not.toBe('2020-01-01');
-    expect(artworkRepository.createQueryBuilder).toHaveBeenCalled();
+    expect(dataSource.transaction).toHaveBeenCalled();
     expect(queryBuilder.set).toHaveBeenCalledWith({ galleryId: 20 });
     expect(queryBuilder.where).toHaveBeenCalledWith(
       'artistId = :id AND status != :sold',
       { id: 1, sold: 'sold' },
     );
+  });
+
+  it('rolls back the artwork move if the artist save fails', async () => {
+    artistRepository.findOneBy.mockResolvedValue({
+      id: 1,
+      galleryId: 10,
+      entryDate: '2020-01-01',
+    });
+    userService.findOneBy.mockResolvedValue({
+      userId: 20,
+      role: UserRole.GALLERY,
+    });
+    dataSource.transaction.mockImplementation(() => {
+      throw new Error('db write failed');
+    });
+
+    await expect(service.transfer(1, 20)).rejects.toThrow('db write failed');
+    expect(artistRepository.save).not.toHaveBeenCalled();
   });
 
   it('scopes findAll to the caller gallery, admin sees everything', async () => {

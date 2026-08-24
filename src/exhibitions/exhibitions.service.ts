@@ -30,6 +30,12 @@ export class ExhibitionsService {
         'EXHIBITION_REQUIRES_ARTWORK',
       );
     }
+    if (dto.endDate < dto.startDate) {
+      throw new BusinessRuleViolationException(
+        'Exhibition end date cannot be before its start date',
+        'EXHIBITION_INVALID_DATE_RANGE',
+      );
+    }
 
     return this.dataSource.transaction(async (manager) => {
       const exhibitionRepository = manager.getRepository(Exhibition);

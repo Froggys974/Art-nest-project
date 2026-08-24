@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, QueryFailedError } from 'typeorm';
 import { Artwork } from '../artworks/artwork.entity';
 import { ArtworkStatus } from '../artworks/artwork-status.enum';
 import { ArtworkStatusHistory } from '../artworks/artwork-status-history.entity';
@@ -144,6 +144,30 @@ describe('SalesService', () => {
       }),
     );
     expect(dataSource.transaction).toHaveBeenCalled();
+  });
+
+  it('converts a concurrent-sale unique-violation into a business rule error', async () => {
+    dataSource.transaction.mockImplementation(() => {
+      throw new QueryFailedError('INSERT INTO sale ...', [], {
+        code: '23505',
+      } as unknown as Error);
+    });
+
+    await expect(
+      service.create({ artworkId: 1, salePrice: 2000 }, 20),
+    ).rejects.toThrow(BusinessRuleViolationException);
+  });
+
+  it('rethrows unrelated database errors as-is', async () => {
+    dataSource.transaction.mockImplementation(() => {
+      throw new QueryFailedError('INSERT INTO sale ...', [], {
+        code: '23503',
+      } as unknown as Error);
+    });
+
+    await expect(
+      service.create({ artworkId: 1, salePrice: 2000 }, 20),
+    ).rejects.toThrow(QueryFailedError);
   });
 
   it('stores the sale with the buying collector', async () => {

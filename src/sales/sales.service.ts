@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { DataSource, QueryFailedError } from 'typeorm';
 import { Artwork } from 'src/artworks/artwork.entity';
 import { ArtworkStatus } from 'src/artworks/artwork-status.enum';
 import { ArtworkStatusHistory } from 'src/artworks/artwork-status-history.entity';
@@ -20,6 +20,29 @@ export class SalesService {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   async create(dto: CreateSaleDto, collectorId: number): Promise<Sale> {
+    try {
+      return await this.runSaleTransaction(dto, collectorId);
+    } catch (error) {
+      // Concurrent sale of the same artwork: the losing transaction hits the
+      // unique constraint on Sale.artworkId. Surface it as a clean business
+      // rule violation instead of an opaque 500.
+      if (
+        error instanceof QueryFailedError &&
+        (error.driverError as { code?: string })?.code === '23505'
+      ) {
+        throw new BusinessRuleViolationException(
+          'Artwork already sold',
+          'ARTWORK_ALREADY_SOLD',
+        );
+      }
+      throw error;
+    }
+  }
+
+  private async runSaleTransaction(
+    dto: CreateSaleDto,
+    collectorId: number,
+  ): Promise<Sale> {
     return this.dataSource.transaction(async (manager) => {
       const artworkRepository = manager.getRepository(Artwork);
       const saleRepository = manager.getRepository(Sale);
