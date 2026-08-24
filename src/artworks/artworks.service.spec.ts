@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Artist } from '../artists/artist.entity';
 import { BusinessRuleViolationException } from '../common/exceptions/business-rule-violation.exception';
@@ -104,5 +105,22 @@ describe('ArtworksService', () => {
     await expect(
       service.changeStatus(1, ArtworkStatus.AVAILABLE, 10),
     ).rejects.toThrow(BusinessRuleViolationException);
+  });
+
+  it("resolves the caller's own artworks via their linked artist profile", async () => {
+    artistRepository.findOneBy.mockResolvedValue({ id: 7, userId: 30 });
+    artworkRepository.findBy.mockResolvedValue([{ id: 1, artistId: 7 }]);
+
+    const artworks = await service.findMine(30);
+
+    expect(artistRepository.findOneBy).toHaveBeenCalledWith({ userId: 30 });
+    expect(artworkRepository.findBy).toHaveBeenCalledWith({ artistId: 7 });
+    expect(artworks).toEqual([{ id: 1, artistId: 7 }]);
+  });
+
+  it('refuses findMine when the account has no linked artist profile', async () => {
+    artistRepository.findOneBy.mockResolvedValue(null);
+
+    await expect(service.findMine(30)).rejects.toThrow(NotFoundException);
   });
 });

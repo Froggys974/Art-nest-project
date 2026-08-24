@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { Artwork } from 'src/artworks/artwork.entity';
 import { ArtworkStatus } from 'src/artworks/artwork-status.enum';
+import { ArtworkStatusHistory } from 'src/artworks/artwork-status-history.entity';
 import { ArtworksService } from 'src/artworks/artworks.service';
 import { BusinessRuleViolationException } from 'src/common/exceptions/business-rule-violation.exception';
 import { Exhibition } from './exhibition.entity';
@@ -16,6 +17,7 @@ export class ExhibitionsService {
     @InjectRepository(Artwork)
     private readonly artworkRepository: Repository<Artwork>,
     private readonly artworksService: ArtworksService,
+    @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
   async create(
@@ -29,36 +31,52 @@ export class ExhibitionsService {
       );
     }
 
-    const artworks = await this.artworkRepository.findBy({
-      id: In(dto.artworkIds),
-    });
-    if (artworks.length !== dto.artworkIds.length) {
-      throw new NotFoundException('One or more artworks not found');
-    }
-    if (artworks.some((artwork) => artwork.galleryId !== galleryId)) {
-      throw new BusinessRuleViolationException(
-        'Artwork belongs to another gallery',
-        'ARTWORK_NOT_IN_GALLERY',
-      );
-    }
-    if (artworks.some((artwork) => artwork.status === ArtworkStatus.ON_LOAN)) {
-      throw new BusinessRuleViolationException(
-        'Artwork is already on loan',
-        'ARTWORK_ALREADY_ON_LOAN',
-      );
-    }
+    return this.dataSource.transaction(async (manager) => {
+      const exhibitionRepository = manager.getRepository(Exhibition);
+      const artworkRepository = manager.getRepository(Artwork);
+      const historyRepository = manager.getRepository(ArtworkStatusHistory);
 
-    const exhibition = await this.exhibitionRepository.save(
-      this.exhibitionRepository.create({ ...dto, galleryId, artworks }),
-    );
-    for (const artwork of artworks) {
-      await this.artworksService.changeStatus(
-        artwork.id,
-        ArtworkStatus.ON_LOAN,
-        galleryId,
+      const artworks = await artworkRepository.findBy({
+        id: In(dto.artworkIds),
+      });
+      if (artworks.length !== dto.artworkIds.length) {
+        throw new NotFoundException('One or more artworks not found');
+      }
+      if (artworks.some((artwork) => artwork.galleryId !== galleryId)) {
+        throw new BusinessRuleViolationException(
+          'Artwork belongs to another gallery',
+          'ARTWORK_NOT_IN_GALLERY',
+        );
+      }
+      if (
+        artworks.some((artwork) => artwork.status === ArtworkStatus.ON_LOAN)
+      ) {
+        throw new BusinessRuleViolationException(
+          'Artwork is already on loan',
+          'ARTWORK_ALREADY_ON_LOAN',
+        );
+      }
+
+      const exhibition = await exhibitionRepository.save(
+        exhibitionRepository.create({ ...dto, galleryId, artworks }),
       );
-    }
-    return exhibition;
+
+      for (const artwork of artworks) {
+        const previousStatus = artwork.status;
+        artwork.status = ArtworkStatus.ON_LOAN;
+        await artworkRepository.save(artwork);
+        await historyRepository.save(
+          historyRepository.create({
+            artworkId: artwork.id,
+            previousStatus,
+            newStatus: ArtworkStatus.ON_LOAN,
+            changedById: galleryId,
+          }),
+        );
+      }
+
+      return exhibition;
+    });
   }
 
   async findAll(): Promise<Exhibition[]> {

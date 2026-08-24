@@ -1,4 +1,4 @@
-# image de base
+# base image
 FROM node:26-alpine AS base
 WORKDIR /home/node
 RUN apk add --no-cache dumb-init wget

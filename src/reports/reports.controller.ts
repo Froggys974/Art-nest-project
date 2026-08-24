@@ -21,6 +21,12 @@ export class ReportsController {
     return this.reportsService.gallerySales(user.userId);
   }
 
+  @Roles(UserRole.ARTIST)
+  @Get('artists/me')
+  myRevenue(@CurrentUser() user: SafeUser) {
+    return this.reportsService.myRevenue(user.userId);
+  }
+
   @Roles(UserRole.GALLERY, UserRole.ADMIN)
   @Get('artists/:id')
   artistRevenue(

@@ -140,4 +140,25 @@ describe('ReportsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('myRevenue', () => {
+    it("resolves the caller's own revenue via their linked artist profile", async () => {
+      artistRepository.findOneBy.mockResolvedValue({ id: 1, userId: 30 });
+      artworkRepository.findBy.mockResolvedValue([{ id: 5 }]);
+      saleRepository.findBy.mockResolvedValue([
+        { salePrice: 3000, galleryCommission: 1200, artistBalance: 1800 },
+      ]);
+
+      const summary = await service.myRevenue(30);
+
+      expect(artistRepository.findOneBy).toHaveBeenCalledWith({ userId: 30 });
+      expect(summary).toEqual({ totalSales: 1, totalRevenue: 1800 });
+    });
+
+    it('throws when the account has no linked artist profile', async () => {
+      artistRepository.findOneBy.mockResolvedValue(null);
+
+      await expect(service.myRevenue(30)).rejects.toThrow(NotFoundException);
+    });
+  });
 });

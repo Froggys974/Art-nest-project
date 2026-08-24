@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { getRepositoryToken } from '@nestjs/typeorm';
+import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm';
 import { ArtworksService } from '../artworks/artworks.service';
 import { Artwork } from '../artworks/artwork.entity';
 import { ArtworkStatus } from '../artworks/artwork-status.enum';
+import { ArtworkStatusHistory } from '../artworks/artwork-status-history.entity';
 import { BusinessRuleViolationException } from '../common/exceptions/business-rule-violation.exception';
 import { Exhibition } from './exhibition.entity';
 import { ExhibitionsService } from './exhibitions.service';
@@ -16,8 +17,10 @@ describe('ExhibitionsService', () => {
     find: jest.Mock;
     findOne: jest.Mock;
   };
-  let artworkRepository: { findBy: jest.Mock };
+  let artworkRepository: { findBy: jest.Mock; save: jest.Mock };
+  let historyRepository: { create: jest.Mock; save: jest.Mock };
   let artworksService: { changeStatus: jest.Mock };
+  let dataSource: { transaction: jest.Mock };
 
   const dto = {
     name: 'Spring Show',
@@ -34,8 +37,29 @@ describe('ExhibitionsService', () => {
       find: jest.fn(),
       findOne: jest.fn(),
     };
-    artworkRepository = { findBy: jest.fn() };
+    artworkRepository = {
+      findBy: jest.fn(),
+      save: jest.fn((value: Partial<Artwork>) => Promise.resolve(value)),
+    };
+    historyRepository = {
+      create: jest.fn((value: Partial<ArtworkStatusHistory>) => value),
+      save: jest.fn((value: Partial<ArtworkStatusHistory>) =>
+        Promise.resolve(value),
+      ),
+    };
     artworksService = { changeStatus: jest.fn() };
+
+    const manager = {
+      getRepository: jest.fn((entity: unknown) => {
+        if (entity === Exhibition) return exhibitionRepository;
+        if (entity === Artwork) return artworkRepository;
+        if (entity === ArtworkStatusHistory) return historyRepository;
+        throw new Error('Unexpected repository requested');
+      }),
+    };
+    dataSource = {
+      transaction: jest.fn((cb: (manager: unknown) => unknown) => cb(manager)),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -46,6 +70,7 @@ describe('ExhibitionsService', () => {
         },
         { provide: getRepositoryToken(Artwork), useValue: artworkRepository },
         { provide: ArtworksService, useValue: artworksService },
+        { provide: getDataSourceToken(), useValue: dataSource },
       ],
     }).compile();
 
@@ -56,7 +81,7 @@ describe('ExhibitionsService', () => {
     expect(service).toBeDefined();
   });
 
-  it('creates an exhibition and puts its artworks on loan', async () => {
+  it('creates an exhibition, puts its artworks on loan, and historizes it', async () => {
     artworkRepository.findBy.mockResolvedValue([
       { id: 1, galleryId: 10, status: ArtworkStatus.AVAILABLE },
       { id: 2, galleryId: 10, status: ArtworkStatus.AVAILABLE },
@@ -65,15 +90,20 @@ describe('ExhibitionsService', () => {
     const exhibition = await service.create(dto, 10);
 
     expect(exhibition.galleryId).toBe(10);
-    expect(artworksService.changeStatus).toHaveBeenCalledWith(
-      1,
-      ArtworkStatus.ON_LOAN,
-      10,
+    expect(dataSource.transaction).toHaveBeenCalled();
+    expect(artworkRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, status: ArtworkStatus.ON_LOAN }),
     );
-    expect(artworksService.changeStatus).toHaveBeenCalledWith(
-      2,
-      ArtworkStatus.ON_LOAN,
-      10,
+    expect(artworkRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 2, status: ArtworkStatus.ON_LOAN }),
+    );
+    expect(historyRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        artworkId: 1,
+        previousStatus: ArtworkStatus.AVAILABLE,
+        newStatus: ArtworkStatus.ON_LOAN,
+        changedById: 10,
+      }),
     );
   });
 

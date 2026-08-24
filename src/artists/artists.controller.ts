@@ -15,6 +15,7 @@ import { ArtistsService } from './artists.service';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import { TransferArtistDto } from './dto/transfer-artist.dto';
+import { LinkArtistUserDto } from './dto/link-artist-user.dto';
 
 @Controller('artists')
 export class ArtistsController {
@@ -26,14 +27,25 @@ export class ArtistsController {
     return this.artistsService.create(dto, user.userId);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.GALLERY)
   @Get()
-  findAll() {
-    return this.artistsService.findAll();
+  findAll(@CurrentUser() user: SafeUser) {
+    return this.artistsService.findAll(user);
   }
 
+  @Roles(UserRole.ARTIST)
+  @Get('me')
+  me(@CurrentUser() user: SafeUser) {
+    return this.artistsService.findByUserId(user.userId);
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.GALLERY)
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.artistsService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: SafeUser,
+  ) {
+    return this.artistsService.findOne(id, user);
   }
 
   @Roles(UserRole.GALLERY, UserRole.ADMIN)
@@ -53,5 +65,15 @@ export class ArtistsController {
     @Body() dto: TransferArtistDto,
   ) {
     return this.artistsService.transfer(id, dto.galleryId);
+  }
+
+  @Roles(UserRole.GALLERY, UserRole.ADMIN)
+  @Patch(':id/link-user')
+  linkUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: LinkArtistUserDto,
+    @CurrentUser() user: SafeUser,
+  ) {
+    return this.artistsService.linkUser(id, dto, user);
   }
 }

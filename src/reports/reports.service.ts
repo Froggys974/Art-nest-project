@@ -78,6 +78,18 @@ export class ReportsService {
       throw new ForbiddenException('Artist belongs to another gallery');
     }
 
+    return this.computeArtistRevenue(artistId);
+  }
+
+  async myRevenue(userId: number): Promise<ArtistRevenue> {
+    const artist = await this.artistRepository.findOneBy({ userId });
+    if (!artist) {
+      throw new NotFoundException('No artist profile linked to this account');
+    }
+    return this.computeArtistRevenue(artist.id);
+  }
+
+  private async computeArtistRevenue(artistId: number): Promise<ArtistRevenue> {
     const artworks = await this.artworkRepository.findBy({ artistId });
     if (artworks.length === 0) {
       return { totalSales: 0, totalRevenue: 0 };
