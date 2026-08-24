@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { createHash } from 'node:crypto';
@@ -136,6 +140,21 @@ describe('AuthService', () => {
     expect(userService.setRefreshTokenHash).toHaveBeenCalledWith(
       1,
       sha256('signed-token'),
+    );
+  });
+
+  it('rejects a refresh token from a gallery pending admin validation', async () => {
+    jwtService.verifyAsync.mockResolvedValue({ sub: 1, username: 'gallery1' });
+    userService.findOneBy.mockResolvedValue({
+      ...collector,
+      role: UserRole.GALLERY,
+      isValidated: false,
+      password: 'hashed',
+      refreshTokenHash: sha256('current-token'),
+    });
+
+    await expect(service.refresh('current-token')).rejects.toThrow(
+      ForbiddenException,
     );
   });
 
