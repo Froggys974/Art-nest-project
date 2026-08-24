@@ -69,6 +69,9 @@ export class AuthService {
     if (!user || user.refreshTokenHash !== this.hashToken(refreshToken)) {
       throw new UnauthorizedException('Invalid refresh token');
     }
+    if (user.role === UserRole.GALLERY && !user.isValidated) {
+      throw new ForbiddenException('Gallery account awaiting admin validation');
+    }
 
     const { password, refreshTokenHash, ...safeUser } = user;
     return this.generateTokens(safeUser);
