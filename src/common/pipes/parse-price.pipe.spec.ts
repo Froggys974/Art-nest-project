@@ -23,4 +23,8 @@ describe('ParsePricePipe', () => {
   it('rejects zero', () => {
     expect(() => pipe.transform('0')).toThrow(BadRequestException);
   });
+
+  it('passes through undefined for optional query params', () => {
+    expect(pipe.transform(undefined)).toBeUndefined();
+  });
 });
