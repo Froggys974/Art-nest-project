@@ -10,7 +10,7 @@ import { SalesService } from './sales.service';
 
 describe('SalesService', () => {
   let service: SalesService;
-  let artworkRepository: { findOneBy: jest.Mock; save: jest.Mock };
+  let artworkRepository: { findOne: jest.Mock; save: jest.Mock };
   let saleRepository: { create: jest.Mock; save: jest.Mock };
   let historyRepository: { create: jest.Mock; save: jest.Mock };
   let dataSource: { transaction: jest.Mock };
@@ -25,7 +25,7 @@ describe('SalesService', () => {
 
   beforeEach(async () => {
     artworkRepository = {
-      findOneBy: jest.fn(),
+      findOne: jest.fn(),
       save: jest.fn((value: Partial<Artwork>) => Promise.resolve(value)),
     };
     saleRepository = {
@@ -63,7 +63,7 @@ describe('SalesService', () => {
   });
 
   it('rejects a sale for a missing artwork', async () => {
-    artworkRepository.findOneBy.mockResolvedValue(null);
+    artworkRepository.findOne.mockResolvedValue(null);
 
     await expect(
       service.create({ artworkId: 1, salePrice: 2000 }, 20),
@@ -71,7 +71,7 @@ describe('SalesService', () => {
   });
 
   it('rejects a sale below the reserve price', async () => {
-    artworkRepository.findOneBy.mockResolvedValue(
+    artworkRepository.findOne.mockResolvedValue(
       artwork({ reservePrice: 5000 }),
     );
 
@@ -81,7 +81,7 @@ describe('SalesService', () => {
   });
 
   it('rejects a sale while the artwork is on loan', async () => {
-    artworkRepository.findOneBy.mockResolvedValue(
+    artworkRepository.findOne.mockResolvedValue(
       artwork({ status: ArtworkStatus.ON_LOAN }),
     );
 
@@ -91,7 +91,7 @@ describe('SalesService', () => {
   });
 
   it('rejects a sale for an artwork already sold', async () => {
-    artworkRepository.findOneBy.mockResolvedValue(
+    artworkRepository.findOne.mockResolvedValue(
       artwork({ status: ArtworkStatus.SOLD }),
     );
 
@@ -101,7 +101,7 @@ describe('SalesService', () => {
   });
 
   it('applies the 40% commission tier at or below 5000', async () => {
-    artworkRepository.findOneBy.mockResolvedValue(artwork());
+    artworkRepository.findOne.mockResolvedValue(artwork());
 
     const sale = await service.create({ artworkId: 1, salePrice: 5000 }, 20);
 
@@ -110,7 +110,7 @@ describe('SalesService', () => {
   });
 
   it('applies the 35% commission tier between 5000 and 20000', async () => {
-    artworkRepository.findOneBy.mockResolvedValue(artwork({ reservePrice: 0 }));
+    artworkRepository.findOne.mockResolvedValue(artwork({ reservePrice: 0 }));
 
     const sale = await service.create({ artworkId: 1, salePrice: 20000 }, 20);
 
@@ -119,7 +119,7 @@ describe('SalesService', () => {
   });
 
   it('applies the 30% commission tier above 20000', async () => {
-    artworkRepository.findOneBy.mockResolvedValue(artwork({ reservePrice: 0 }));
+    artworkRepository.findOne.mockResolvedValue(artwork({ reservePrice: 0 }));
 
     const sale = await service.create({ artworkId: 1, salePrice: 20001 }, 20);
 
@@ -128,7 +128,7 @@ describe('SalesService', () => {
   });
 
   it('marks the artwork sold and records the status history within the transaction', async () => {
-    artworkRepository.findOneBy.mockResolvedValue(artwork());
+    artworkRepository.findOne.mockResolvedValue(artwork());
 
     await service.create({ artworkId: 1, salePrice: 2000 }, 20);
 
@@ -171,7 +171,7 @@ describe('SalesService', () => {
   });
 
   it('stores the sale with the buying collector', async () => {
-    artworkRepository.findOneBy.mockResolvedValue(artwork());
+    artworkRepository.findOne.mockResolvedValue(artwork());
 
     const sale = await service.create({ artworkId: 1, salePrice: 2000 }, 20);
 

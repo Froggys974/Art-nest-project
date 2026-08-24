@@ -139,7 +139,7 @@ describe('ArtistsService', () => {
     );
   });
 
-  it('rolls back the artwork move if the artist save fails', async () => {
+  it('propagates a failed artist save after the artwork move ran in the same transaction', async () => {
     artistRepository.findOneBy.mockResolvedValue({
       id: 1,
       galleryId: 10,
@@ -149,12 +149,11 @@ describe('ArtistsService', () => {
       userId: 20,
       role: UserRole.GALLERY,
     });
-    dataSource.transaction.mockImplementation(() => {
-      throw new Error('db write failed');
-    });
+    artistRepository.save.mockRejectedValueOnce(new Error('db write failed'));
 
     await expect(service.transfer(1, 20)).rejects.toThrow('db write failed');
-    expect(artistRepository.save).not.toHaveBeenCalled();
+    expect(queryBuilder.execute).toHaveBeenCalled();
+    expect(artistRepository.save).toHaveBeenCalled();
   });
 
   it('scopes findAll to the caller gallery, admin sees everything', async () => {

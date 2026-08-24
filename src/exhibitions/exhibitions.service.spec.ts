@@ -17,7 +17,7 @@ describe('ExhibitionsService', () => {
     find: jest.Mock;
     findOne: jest.Mock;
   };
-  let artworkRepository: { findBy: jest.Mock; save: jest.Mock };
+  let artworkRepository: { find: jest.Mock; save: jest.Mock };
   let historyRepository: { create: jest.Mock; save: jest.Mock };
   let artworksService: { changeStatus: jest.Mock };
   let dataSource: { transaction: jest.Mock };
@@ -38,7 +38,7 @@ describe('ExhibitionsService', () => {
       findOne: jest.fn(),
     };
     artworkRepository = {
-      findBy: jest.fn(),
+      find: jest.fn(),
       save: jest.fn((value: Partial<Artwork>) => Promise.resolve(value)),
     };
     historyRepository = {
@@ -82,7 +82,7 @@ describe('ExhibitionsService', () => {
   });
 
   it('creates an exhibition, puts its artworks on loan, and historizes it', async () => {
-    artworkRepository.findBy.mockResolvedValue([
+    artworkRepository.find.mockResolvedValue([
       { id: 1, galleryId: 10, status: ArtworkStatus.AVAILABLE },
       { id: 2, galleryId: 10, status: ArtworkStatus.AVAILABLE },
     ]);
@@ -123,7 +123,7 @@ describe('ExhibitionsService', () => {
   });
 
   it('rejects an exhibition referencing a missing artwork', async () => {
-    artworkRepository.findBy.mockResolvedValue([
+    artworkRepository.find.mockResolvedValue([
       { id: 1, galleryId: 10, status: ArtworkStatus.AVAILABLE },
     ]);
 
@@ -131,7 +131,7 @@ describe('ExhibitionsService', () => {
   });
 
   it('rejects an exhibition with an artwork from another gallery', async () => {
-    artworkRepository.findBy.mockResolvedValue([
+    artworkRepository.find.mockResolvedValue([
       { id: 1, galleryId: 10, status: ArtworkStatus.AVAILABLE },
       { id: 2, galleryId: 99, status: ArtworkStatus.AVAILABLE },
     ]);
@@ -142,7 +142,7 @@ describe('ExhibitionsService', () => {
   });
 
   it('rejects an exhibition with an artwork already on loan', async () => {
-    artworkRepository.findBy.mockResolvedValue([
+    artworkRepository.find.mockResolvedValue([
       { id: 1, galleryId: 10, status: ArtworkStatus.ON_LOAN },
       { id: 2, galleryId: 10, status: ArtworkStatus.AVAILABLE },
     ]);

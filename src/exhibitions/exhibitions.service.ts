@@ -41,9 +41,10 @@ export class ExhibitionsService {
       const exhibitionRepository = manager.getRepository(Exhibition);
       const artworkRepository = manager.getRepository(Artwork);
       const historyRepository = manager.getRepository(ArtworkStatusHistory);
-
-      const artworks = await artworkRepository.findBy({
-        id: In(dto.artworkIds),
+      const artworks = await artworkRepository.find({
+        where: { id: In(dto.artworkIds) },
+        order: { id: 'ASC' },
+        lock: { mode: 'pessimistic_write' },
       });
       if (artworks.length !== dto.artworkIds.length) {
         throw new NotFoundException('One or more artworks not found');

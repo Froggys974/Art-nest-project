@@ -47,8 +47,10 @@ export class SalesService {
       const artworkRepository = manager.getRepository(Artwork);
       const saleRepository = manager.getRepository(Sale);
       const historyRepository = manager.getRepository(ArtworkStatusHistory);
-
-      const artwork = await artworkRepository.findOneBy({ id: dto.artworkId });
+      const artwork = await artworkRepository.findOne({
+        where: { id: dto.artworkId },
+        lock: { mode: 'pessimistic_write' },
+      });
       if (!artwork) {
         throw new NotFoundException('Artwork not found');
       }
