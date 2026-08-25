@@ -45,7 +45,11 @@ export class ArtworksService {
     return artwork;
   }
 
-  async findAll(status?: ArtworkStatus, maxPrice?: number): Promise<Artwork[]> {
+  async findAll(
+    status?: ArtworkStatus,
+    maxPrice?: number,
+    artistId?: number,
+  ): Promise<Artwork[]> {
     const where: FindOptionsWhere<Artwork> = {};
     if (status) {
       where.status = status;
@@ -53,7 +57,22 @@ export class ArtworksService {
     if (maxPrice !== undefined) {
       where.price = LessThanOrEqual(maxPrice);
     }
+    if (artistId !== undefined) {
+      where.artistId = artistId;
+    }
     return this.artworkRepository.findBy(where);
+  }
+
+  async findMine(
+    userId: number,
+    status?: ArtworkStatus,
+    maxPrice?: number,
+  ): Promise<Artwork[]> {
+    const artist = await this.artistRepository.findOneBy({ userId });
+    if (!artist) {
+      throw new NotFoundException('No artist profile linked to this account');
+    }
+    return this.findAll(status, maxPrice, artist.id);
   }
 
   async findOne(id: number): Promise<Artwork> {

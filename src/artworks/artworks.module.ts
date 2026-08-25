@@ -15,6 +15,6 @@ import { OwnershipGuard } from './ownership.guard';
   ],
   controllers: [ArtworksController],
   providers: [ArtworksService, ArtworkLimitPipe, OwnershipGuard],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, ArtworksService],
 })
 export class ArtworksModule {}

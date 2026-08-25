@@ -8,6 +8,7 @@ import { ArtistsModule } from './artists/artists.module';
 import { ArtworksModule } from './artworks/artworks.module';
 import { ExhibitionsModule } from './exhibitions/exhibitions.module';
 import { SalesModule } from './sales/sales.module';
+import { ReportsModule } from './reports/reports.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
 import { CommonModule } from './common/common.module';
@@ -42,6 +43,7 @@ import { envValidationSchema } from './config/env.validation';
     ArtworksModule,
     ExhibitionsModule,
     SalesModule,
+    ReportsModule,
   ],
   providers: [
     {

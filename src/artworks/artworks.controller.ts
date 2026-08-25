@@ -45,6 +45,21 @@ export class ArtworksController {
     return this.artworksService.findAll(status, maxPrice as number | undefined);
   }
 
+  @Roles(UserRole.ARTIST)
+  @Get('me')
+  findMine(
+    @CurrentUser() user: SafeUser,
+    @Query('status', new ParseEnumPipe(ArtworkStatus, { optional: true }))
+    status?: ArtworkStatus,
+    @Query('maxPrice', ParsePricePipe) maxPrice?: number | string,
+  ) {
+    return this.artworksService.findMine(
+      user.userId,
+      status,
+      maxPrice as number | undefined,
+    );
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.artworksService.findOne(id);
