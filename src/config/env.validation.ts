@@ -1,5 +1,9 @@
 import * as Joi from 'joi';
 
+/**
+ * Joi schema for validating environment variables at application startup.
+ * Validates database config, JWT secrets, admin credentials, and server settings.
+ */
 export const envValidationSchema = Joi.object({
   NODE_ENV: Joi.string()
     .valid('development', 'production', 'test')

@@ -18,6 +18,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
+  /**
+   * Validates the JWT payload and retrieves the user.
+   * @param payload - The JWT payload containing user ID and username
+   * @returns Safe user object without sensitive fields
+   * @throws {UnauthorizedException} If user not found
+   */
   async validate(payload: {
     sub: number;
     username: string;

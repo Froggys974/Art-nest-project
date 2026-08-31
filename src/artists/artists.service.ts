@@ -16,6 +16,10 @@ import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import { LinkArtistUserDto } from './dto/link-artist-user.dto';
 
+/**
+ * Returns the current date in YYYY-MM-DD format.
+ * @returns The current date as an ISO date string
+ */
 const today = (): string => new Date().toISOString().slice(0, 10);
 
 @Injectable()
@@ -29,6 +33,12 @@ export class ArtistsService {
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
+  /**
+   * Creates a new artist profile for a gallery.
+   * @param dto - The artist creation data
+   * @param galleryId - The ID of the gallery creating the artist
+   * @returns The created artist entity
+   */
   async create(dto: CreateArtistDto, galleryId: number): Promise<Artist> {
     const artist = this.artistRepository.create({
       ...dto,
@@ -38,6 +48,11 @@ export class ArtistsService {
     return this.artistRepository.save(artist);
   }
 
+  /**
+   * Retrieves all artists. Admin users see all artists, gallery users see only their own.
+   * @param user - The authenticated user making the request
+   * @returns Array of artist entities
+   */
   async findAll(user: SafeUser): Promise<Artist[]> {
     if (user.role === UserRole.ADMIN) {
       return this.artistRepository.find();
@@ -45,6 +60,13 @@ export class ArtistsService {
     return this.artistRepository.findBy({ galleryId: user.userId });
   }
 
+  /**
+   * Retrieves a single artist by ID, checking that the user has permission to access it.
+   * @param id - The artist ID
+   * @param user - The authenticated user making the request
+   * @returns The artist entity
+   * @throws {ForbiddenException} If the artist belongs to another gallery and user is not admin
+   */
   async findOne(id: number, user: SafeUser): Promise<Artist> {
     const artist = await this.findOrThrow(id);
     if (user.role !== UserRole.ADMIN && artist.galleryId !== user.userId) {
@@ -53,6 +75,14 @@ export class ArtistsService {
     return artist;
   }
 
+  /**
+   * Updates an artist's information.
+   * @param id - The artist ID
+   * @param dto - The update data
+   * @param user - The authenticated user making the request
+   * @returns The updated artist entity
+   * @throws {ForbiddenException} If the artist belongs to another gallery and user is not admin
+   */
   async update(
     id: number,
     dto: UpdateArtistDto,
@@ -66,6 +96,13 @@ export class ArtistsService {
     return this.artistRepository.save(artist);
   }
 
+  /**
+   * Transfers an artist to another gallery. Non-sold artworks are also transferred.
+   * @param id - The artist ID
+   * @param galleryId - The ID of the target gallery
+   * @returns The updated artist entity
+   * @throws {BadRequestException} If target user is not a gallery
+   */
   async transfer(id: number, galleryId: number): Promise<Artist> {
     const artist = await this.findOrThrow(id);
     const gallery = await this.userService.findOneBy({ userId: galleryId });
@@ -90,6 +127,15 @@ export class ArtistsService {
     });
   }
 
+  /**
+   * Links an artist profile to a user account.
+   * @param id - The artist ID
+   * @param dto - Contains the userId to link
+   * @param user - The authenticated user making the request
+   * @returns The updated artist entity
+   * @throws {ForbiddenException} If the artist belongs to another gallery and user is not admin
+   * @throws {BadRequestException} If target user is not an artist account or already linked to another profile
+   */
   async linkUser(
     id: number,
     dto: LinkArtistUserDto,
@@ -115,6 +161,12 @@ export class ArtistsService {
     return this.artistRepository.save(artist);
   }
 
+  /**
+   * Finds an artist profile by the associated user ID.
+   * @param userId - The user ID to search for
+   * @returns The artist entity
+   * @throws {NotFoundException} If no artist profile is linked to this account
+   */
   async findByUserId(userId: number): Promise<Artist> {
     const artist = await this.artistRepository.findOneBy({ userId });
     if (!artist) {
@@ -123,6 +175,12 @@ export class ArtistsService {
     return artist;
   }
 
+  /**
+   * Finds an artist by ID or throws a NotFoundException.
+   * @param id - The artist ID
+   * @returns The artist entity
+   * @throws {NotFoundException} If artist not found
+   */
   private async findOrThrow(id: number): Promise<Artist> {
     const artist = await this.artistRepository.findOneBy({ id });
     if (!artist) {

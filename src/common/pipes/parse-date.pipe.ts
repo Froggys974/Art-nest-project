@@ -2,6 +2,12 @@ import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
 
 @Injectable()
 export class ParseDatePipe implements PipeTransform<string, string> {
+  /**
+   * Validates and parses an ISO date string in YYYY-MM-DD format.
+   * @param value - The date string to validate
+   * @returns The validated date string
+   * @throws {BadRequestException} If the value is not a valid ISO date
+   */
   transform(value: string): string {
     if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
       throw new BadRequestException(

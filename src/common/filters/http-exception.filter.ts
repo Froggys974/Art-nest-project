@@ -12,6 +12,11 @@ import { Request, Response } from 'express';
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
+  /**
+   * Catches all exceptions and formats them as standardized HTTP responses.
+   * @param exception - The exception that was thrown
+   * @param host - The arguments host for accessing request/response
+   */
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -43,6 +48,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
     });
   }
 
+  /**
+   * Extracts the error message from an HttpException.
+   * @param exception - The HTTP exception
+   * @returns The error message as a string or array of strings
+   */
   private extractMessage(exception: HttpException): string | string[] {
     const res = exception.getResponse();
     if (typeof res === 'string') {

@@ -9,6 +9,11 @@ import { BusinessRuleViolationException } from '../exceptions/business-rule-viol
 
 @Catch(BusinessRuleViolationException)
 export class BusinessRuleViolationFilter implements ExceptionFilter {
+  /**
+   * Catches business rule violations and formats them as HTTP 422 responses.
+   * @param exception - The business rule violation exception
+   * @param host - The arguments host for accessing request/response
+   */
   catch(exception: BusinessRuleViolationException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();

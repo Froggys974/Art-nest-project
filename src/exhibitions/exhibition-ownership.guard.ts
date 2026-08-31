@@ -19,6 +19,13 @@ export class ExhibitionOwnershipGuard implements CanActivate {
     private readonly exhibitionRepository: Repository<Exhibition>,
   ) {}
 
+  /**
+   * Checks if the user has permission to access an exhibition (admin or owning gallery).
+   * @param context - The execution context
+   * @returns True if user is authorized, false otherwise
+   * @throws {NotFoundException} If exhibition not found
+   * @throws {ForbiddenException} If exhibition belongs to another gallery
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
       .switchToHttp()

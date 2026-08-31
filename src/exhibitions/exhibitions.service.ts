@@ -20,6 +20,14 @@ export class ExhibitionsService {
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 
+  /**
+   * Creates an exhibition and sets all listed artworks to ON_LOAN status.
+   * @param dto - The exhibition creation data
+   * @param galleryId - The ID of the gallery creating the exhibition
+   * @returns The created exhibition entity with artworks
+   * @throws {BusinessRuleViolationException} If no artworks, invalid date range, artwork not owned, or already on loan
+   * @throws {NotFoundException} If one or more artworks not found
+   */
   async create(
     dto: CreateExhibitionDto,
     galleryId: number,
@@ -86,10 +94,20 @@ export class ExhibitionsService {
     });
   }
 
+  /**
+   * Retrieves all exhibitions with their associated artworks.
+   * @returns Array of exhibition entities with artwork relations
+   */
   async findAll(): Promise<Exhibition[]> {
     return this.exhibitionRepository.find({ relations: { artworks: true } });
   }
 
+  /**
+   * Retrieves a single exhibition by ID with its artworks.
+   * @param id - The exhibition ID
+   * @returns The exhibition entity with artwork relations
+   * @throws {NotFoundException} If exhibition not found
+   */
   async findOne(id: number): Promise<Exhibition> {
     const exhibition = await this.exhibitionRepository.findOne({
       where: { id },
@@ -101,6 +119,12 @@ export class ExhibitionsService {
     return exhibition;
   }
 
+  /**
+   * Ends an exhibition and returns all loaned artworks to AVAILABLE status.
+   * @param id - The exhibition ID
+   * @param userId - The ID of the user ending the exhibition
+   * @returns The exhibition entity
+   */
   async end(id: number, userId: number): Promise<Exhibition> {
     const exhibition = await this.findOne(id);
     for (const artwork of exhibition.artworks) {

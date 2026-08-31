@@ -9,6 +9,11 @@ import { round2 } from 'src/common/money';
 import { Sale } from './sale.entity';
 import { CreateSaleDto } from './dto/create-sale.dto';
 
+/**
+ * Calculates the commission rate based on the sale price.
+ * @param salePrice - The sale price in EUR
+ * @returns Commission rate: 0.4 (≤5000), 0.35 (5001-20000), 0.3 (>20000)
+ */
 const commissionRateFor = (salePrice: number): number => {
   if (salePrice <= 5000) return 0.4;
   if (salePrice <= 20000) return 0.35;
@@ -19,6 +24,14 @@ const commissionRateFor = (salePrice: number): number => {
 export class SalesService {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
+  /**
+   * Creates a new sale transaction with pessimistic locking to prevent double-sells.
+   * @param dto - The sale creation data
+   * @param collectorId - The ID of the collector making the purchase
+   * @returns The created sale entity
+   * @throws {BusinessRuleViolationException} If artwork is already sold, on loan, or below reserve price
+   * @throws {NotFoundException} If artwork not found
+   */
   async create(dto: CreateSaleDto, collectorId: number): Promise<Sale> {
     try {
       return await this.runSaleTransaction(dto, collectorId);
@@ -36,6 +49,14 @@ export class SalesService {
     }
   }
 
+  /**
+   * Executes the sale transaction with pessimistic locking, commission calculation, and status updates.
+   * @param dto - The sale creation data
+   * @param collectorId - The ID of the collector making the purchase
+   * @returns The created sale entity
+   * @throws {NotFoundException} If artwork not found
+   * @throws {BusinessRuleViolationException} If artwork is on loan, already sold, or below reserve price
+   */
   private async runSaleTransaction(
     dto: CreateSaleDto,
     collectorId: number,

@@ -12,6 +12,9 @@ export class AdminSeedService implements OnApplicationBootstrap {
     private readonly config: ConfigService,
   ) {}
 
+  /**
+   * Creates the admin user on application startup if it doesn't already exist.
+   */
   async onApplicationBootstrap() {
     const username = this.config.getOrThrow<string>('ADMIN_USERNAME');
     const existing = await this.userService.findOneBy({ username });

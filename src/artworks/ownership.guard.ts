@@ -19,6 +19,13 @@ export class OwnershipGuard implements CanActivate {
     private readonly artworkRepository: Repository<Artwork>,
   ) {}
 
+  /**
+   * Checks if the user has permission to access an artwork (admin or owning gallery).
+   * @param context - The execution context
+   * @returns True if user is authorized, false otherwise
+   * @throws {NotFoundException} If artwork not found
+   * @throws {ForbiddenException} If artwork belongs to another gallery
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
       .switchToHttp()

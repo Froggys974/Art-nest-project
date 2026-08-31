@@ -12,6 +12,12 @@ import { Observable, tap } from 'rxjs';
 export class LoggingInterceptor implements NestInterceptor {
   private readonly logger = new Logger('HTTP');
 
+  /**
+   * Intercepts HTTP requests and logs their method, URL, status, and duration.
+   * @param context - The execution context
+   * @param next - The call handler for the next interceptor or route handler
+   * @returns Observable of the response
+   */
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const http = context.switchToHttp();
     const request = http.getRequest<Request>();

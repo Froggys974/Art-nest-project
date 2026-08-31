@@ -9,6 +9,11 @@ import { ROLES_KEY } from './roles.decorator';
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
+  /**
+   * Checks if the user has one of the required roles for the route.
+   * @param context - The execution context
+   * @returns True if user has required role or no roles are required, false otherwise
+   */
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
       ROLES_KEY,

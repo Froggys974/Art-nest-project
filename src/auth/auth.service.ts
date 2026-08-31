@@ -13,6 +13,9 @@ import { SafeUser } from 'src/user/types/safe-user.type';
 import { UserRole } from 'src/user/user-role.enum';
 import { RegisterDto } from './dto/register.dto';
 
+/**
+ * JWT payload structure containing user identification.
+ */
 type JwtPayload = { sub: number; username: string };
 
 @Injectable()
@@ -23,6 +26,13 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
+  /**
+   * Validates user credentials and returns safe user data if valid.
+   * @param username - The username to validate
+   * @param pass - The password to validate
+   * @returns Safe user object if credentials are valid, null otherwise
+   * @throws {ForbiddenException} If gallery account is not yet validated by admin
+   */
   async validateUser(username: string, pass: string): Promise<SafeUser | null> {
     const user = await this.usersService.findOneBy({ username });
     if (!user || !(await bcrypt.compare(pass, user.password))) {
@@ -35,6 +45,12 @@ export class AuthService {
     return result;
   }
 
+  /**
+   * Registers a new user account.
+   * @param dto - Registration data containing username, password, and role
+   * @returns Safe user object without sensitive fields
+   * @throws {ConflictException} If username is already taken
+   */
   async register(dto: RegisterDto): Promise<SafeUser> {
     const existing = await this.usersService.findOneBy({
       username: dto.username,
@@ -51,10 +67,22 @@ export class AuthService {
     return safeUser;
   }
 
+  /**
+   * Generates access and refresh tokens for a logged-in user.
+   * @param user - The authenticated user
+   * @returns Object containing access_token and refresh_token
+   */
   login(user: SafeUser) {
     return this.generateTokens(user);
   }
 
+  /**
+   * Refreshes access and refresh tokens using a valid refresh token.
+   * @param refreshToken - The refresh token to validate
+   * @returns Object containing new access_token and refresh_token
+   * @throws {UnauthorizedException} If refresh token is invalid or expired
+   * @throws {ForbiddenException} If gallery account is not yet validated by admin
+   */
   async refresh(refreshToken: string) {
     let payload: JwtPayload;
     try {
@@ -77,10 +105,19 @@ export class AuthService {
     return this.generateTokens(safeUser);
   }
 
+  /**
+   * Logs out a user by invalidating their refresh token.
+   * @param userId - The ID of the user to log out
+   */
   async logout(userId: number): Promise<void> {
     await this.usersService.setRefreshTokenHash(userId, null);
   }
 
+  /**
+   * Generates new access and refresh tokens for a user and stores the refresh token hash.
+   * @param user - The user to generate tokens for
+   * @returns Object containing access_token and refresh_token
+   */
   private async generateTokens(user: SafeUser) {
     const payload: JwtPayload = { sub: user.userId, username: user.username };
     const accessToken = this.jwtService.sign(payload);
@@ -95,6 +132,11 @@ export class AuthService {
     return { access_token: accessToken, refresh_token: refreshToken };
   }
 
+  /**
+   * Hashes a token using SHA-256.
+   * @param token - The token to hash
+   * @returns The hexadecimal hash of the token
+   */
   private hashToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
   }

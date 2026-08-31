@@ -9,6 +9,10 @@ import { ArtworkStatusHistory } from './artwork-status-history.entity';
 import { CreateArtworkDto } from './dto/create-artwork.dto';
 import { UpdateArtworkDto } from './dto/update-artwork.dto';
 
+/**
+ * Returns the current date in YYYY-MM-DD format.
+ * @returns The current date as an ISO date string
+ */
 const today = (): string => new Date().toISOString().slice(0, 10);
 
 @Injectable()
@@ -22,6 +26,14 @@ export class ArtworksService {
     private readonly artistRepository: Repository<Artist>,
   ) {}
 
+  /**
+   * Creates a new artwork for a gallery and records the initial status.
+   * @param dto - The artwork creation data
+   * @param galleryId - The ID of the gallery creating the artwork
+   * @returns The created artwork entity
+   * @throws {NotFoundException} If artist not found
+   * @throws {BusinessRuleViolationException} If artist belongs to another gallery
+   */
   async create(dto: CreateArtworkDto, galleryId: number): Promise<Artwork> {
     const artist = await this.artistRepository.findOneBy({ id: dto.artistId });
     if (!artist) {
@@ -45,6 +57,13 @@ export class ArtworksService {
     return artwork;
   }
 
+  /**
+   * Retrieves all artworks with optional filters.
+   * @param status - Optional filter by artwork status
+   * @param maxPrice - Optional filter by maximum price
+   * @param artistId - Optional filter by artist ID
+   * @returns Array of artwork entities matching the filters
+   */
   async findAll(
     status?: ArtworkStatus,
     maxPrice?: number,
@@ -63,6 +82,14 @@ export class ArtworksService {
     return this.artworkRepository.findBy(where);
   }
 
+  /**
+   * Retrieves artworks for a specific artist user with optional filters.
+   * @param userId - The user ID of the artist
+   * @param status - Optional filter by artwork status
+   * @param maxPrice - Optional filter by maximum price
+   * @returns Array of artwork entities
+   * @throws {NotFoundException} If no artist profile is linked to this account
+   */
   async findMine(
     userId: number,
     status?: ArtworkStatus,
@@ -75,6 +102,12 @@ export class ArtworksService {
     return this.findAll(status, maxPrice, artist.id);
   }
 
+  /**
+   * Retrieves a single artwork by ID.
+   * @param id - The artwork ID
+   * @returns The artwork entity
+   * @throws {NotFoundException} If artwork not found
+   */
   async findOne(id: number): Promise<Artwork> {
     const artwork = await this.artworkRepository.findOneBy({ id });
     if (!artwork) {
@@ -83,12 +116,26 @@ export class ArtworksService {
     return artwork;
   }
 
+  /**
+   * Updates an artwork's information.
+   * @param id - The artwork ID
+   * @param dto - The update data
+   * @returns The updated artwork entity
+   */
   async update(id: number, dto: UpdateArtworkDto): Promise<Artwork> {
     const artwork = await this.findOne(id);
     Object.assign(artwork, dto);
     return this.artworkRepository.save(artwork);
   }
 
+  /**
+   * Changes the status of an artwork and records the change in history.
+   * @param id - The artwork ID
+   * @param status - The new status
+   * @param changedById - The ID of the user making the change
+   * @returns The updated artwork entity
+   * @throws {BusinessRuleViolationException} If trying to set status to SOLD or change a sold artwork
+   */
   async changeStatus(
     id: number,
     status: ArtworkStatus,
@@ -118,6 +165,11 @@ export class ArtworksService {
     return artwork;
   }
 
+  /**
+   * Retrieves the status change history for an artwork.
+   * @param id - The artwork ID
+   * @returns Array of status history entries in chronological order
+   */
   async history(id: number): Promise<ArtworkStatusHistory[]> {
     await this.findOne(id);
     return this.historyRepository.find({
@@ -126,6 +178,13 @@ export class ArtworksService {
     });
   }
 
+  /**
+   * Records a status change in the artwork history.
+   * @param artworkId - The artwork ID
+   * @param previousStatus - The previous status (null for initial creation)
+   * @param newStatus - The new status
+   * @param changedById - The ID of the user who made the change
+   */
   private async recordStatusChange(
     artworkId: number,
     previousStatus: ArtworkStatus | null,

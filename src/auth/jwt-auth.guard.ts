@@ -9,6 +9,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     super();
   }
 
+  /**
+   * Checks if the route is public or requires JWT authentication.
+   * @param context - The execution context
+   * @returns True if route is public, otherwise delegates to JWT authentication
+   */
   canActivate(context: ExecutionContext) {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),

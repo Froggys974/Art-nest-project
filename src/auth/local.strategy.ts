@@ -10,6 +10,13 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     super();
   }
 
+  /**
+   * Validates username and password credentials.
+   * @param username - The username to validate
+   * @param password - The password to validate
+   * @returns Safe user object if credentials are valid
+   * @throws {UnauthorizedException} If credentials are invalid
+   */
   async validate(username: string, password: string): Promise<SafeUser> {
     const user = await this.authService.validateUser(username, password);
     if (!user) {
