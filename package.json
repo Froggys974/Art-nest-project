@@ -12,7 +12,7 @@
     "docker:rebuild": "npm run docker:down -- -v && npm run docker:up -- --build",
     "docker:start": "npm run docker -- npm run start:dev",
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
