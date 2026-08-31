@@ -76,8 +76,7 @@ export class ArtistsService {
     artist.entryDate = today();
 
     return this.dataSource.transaction(async (manager) => {
-      // Sold artworks keep their original galleryId so past sales/commission
-      // reports stay attributed to the gallery that actually sold them.
+      // Sold artworks keep their original galleryId so past sales/commission reports stay attributed to the gallery that made the sale
       await manager
         .createQueryBuilder()
         .update(Artwork)

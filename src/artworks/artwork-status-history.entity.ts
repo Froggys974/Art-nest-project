@@ -10,7 +10,7 @@ import { User } from 'src/user/user.entity';
 import { Artwork } from './artwork.entity';
 import { ArtworkStatus } from './artwork-status.enum';
 
-// One row / status transition, traceability rule
+// One row / status transition, traceability
 @Entity()
 export class ArtworkStatusHistory {
   @PrimaryGeneratedColumn()

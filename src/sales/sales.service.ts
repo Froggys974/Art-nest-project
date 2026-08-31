@@ -23,9 +23,6 @@ export class SalesService {
     try {
       return await this.runSaleTransaction(dto, collectorId);
     } catch (error) {
-      // Concurrent sale of the same artwork: the losing transaction hits the
-      // unique constraint on Sale.artworkId. Surface it as a clean business
-      // rule violation instead of an opaque 500.
       if (
         error instanceof QueryFailedError &&
         (error.driverError as { code?: string })?.code === '23505'
