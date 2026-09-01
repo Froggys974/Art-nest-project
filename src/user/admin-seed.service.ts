@@ -18,11 +18,20 @@ export class AdminSeedService implements OnApplicationBootstrap {
     if (existing) {
       return;
     }
-    await this.userService.create(
-      username,
-      this.config.getOrThrow<string>('ADMIN_PASSWORD'),
-      UserRole.ADMIN,
-    );
-    this.logger.log(`Admin user '${username}' created`);
+    try {
+      await this.userService.create(
+        username,
+        this.config.getOrThrow<string>('ADMIN_PASSWORD'),
+        UserRole.ADMIN,
+      );
+      this.logger.log(`Admin user '${username}' created`);
+    } catch (error: any) {
+      // 23505 is PostgreSQL unique_violation code
+      if (error.code === '23505') {
+        this.logger.log(`Admin user '${username}' already exists (caught unique violation)`);
+      } else {
+        throw error;
+      }
+    }
   }
 }
