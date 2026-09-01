@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm';
 import { UserService } from '../user/user.service';
 import { UserRole } from '../user/user-role.enum';
@@ -15,6 +19,7 @@ describe('ArtistsService', () => {
     find: jest.Mock;
     findBy: jest.Mock;
     findOneBy: jest.Mock;
+    findOne: jest.Mock;
   };
   let artworkRepository: { createQueryBuilder: jest.Mock };
   let queryBuilder: {
@@ -40,6 +45,7 @@ describe('ArtistsService', () => {
       find: jest.fn(),
       findBy: jest.fn(),
       findOneBy: jest.fn(),
+      findOne: jest.fn(),
     };
     queryBuilder = {
       update: jest.fn().mockReturnThis(),
@@ -171,6 +177,31 @@ describe('ArtistsService', () => {
 
     await expect(service.findOne(1, gallery)).rejects.toThrow(
       ForbiddenException,
+    );
+  });
+
+  it('loads the artist with their artworks via the OneToMany relation when asked', async () => {
+    artistRepository.findOne.mockResolvedValue({
+      id: 1,
+      galleryId: 10,
+      artworks: [{ id: 5, title: 'Self-Portrait' }],
+    });
+
+    const artist = await service.findOne(1, gallery, true);
+
+    expect(artistRepository.findOne).toHaveBeenCalledWith({
+      where: { id: 1 },
+      relations: { artworks: true },
+    });
+    expect(artistRepository.findOneBy).not.toHaveBeenCalled();
+    expect(artist.artworks).toHaveLength(1);
+  });
+
+  it('404s when the artwork-inclusive lookup finds nothing', async () => {
+    artistRepository.findOne.mockResolvedValue(null);
+
+    await expect(service.findOne(1, gallery, true)).rejects.toThrow(
+      NotFoundException,
     );
   });
 

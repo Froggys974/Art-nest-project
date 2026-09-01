@@ -6,11 +6,13 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -67,13 +69,20 @@ export class ArtistsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get one artist by ID' })
   @ApiParam({ name: 'id', type: Number, example: 1 })
+  @ApiQuery({
+    name: 'include',
+    required: false,
+    example: 'artworks',
+    description: 'Set to "artworks" to also return this artist\'s artworks',
+  })
   @ApiResponse({ status: 200, description: 'Artist found' })
   @ApiResponse({ status: 404, description: 'Artist not found' })
   findOne(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user: SafeUser,
+    @Query('include') include?: string,
   ) {
-    return this.artistsService.findOne(id, user);
+    return this.artistsService.findOne(id, user, include === 'artworks');
   }
 
   @Roles(UserRole.GALLERY, UserRole.ADMIN)
