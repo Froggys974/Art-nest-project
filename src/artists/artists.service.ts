@@ -45,10 +45,27 @@ export class ArtistsService {
     return this.artistRepository.findBy({ galleryId: user.userId });
   }
 
-  async findOne(id: number, user: SafeUser): Promise<Artist> {
-    const artist = await this.findOrThrow(id);
+  async findOne(
+    id: number,
+    user: SafeUser,
+    includeArtworks = false,
+  ): Promise<Artist> {
+    const artist = includeArtworks
+      ? await this.findWithArtworks(id)
+      : await this.findOrThrow(id);
     if (user.role !== UserRole.ADMIN && artist.galleryId !== user.userId) {
       throw new ForbiddenException('Artist belongs to another gallery');
+    }
+    return artist;
+  }
+
+  private async findWithArtworks(id: number): Promise<Artist> {
+    const artist = await this.artistRepository.findOne({
+      where: { id },
+      relations: { artworks: true },
+    });
+    if (!artist) {
+      throw new NotFoundException('Artist not found');
     }
     return artist;
   }

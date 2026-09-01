@@ -3,10 +3,12 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from 'src/user/user.entity';
+import { Artwork } from 'src/artworks/artwork.entity';
 import { ArtistStatus } from './artist-status.enum';
 
 @Entity()
@@ -49,4 +51,7 @@ export class Artist {
 
   @Column({ type: 'int', nullable: true })
   userId!: number | null;
+
+  @OneToMany(() => Artwork, (artwork) => artwork.artist)
+  artworks!: Artwork[];
 }

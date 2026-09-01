@@ -10,6 +10,6 @@ import { ArtistsService } from './artists.service';
   imports: [TypeOrmModule.forFeature([Artist, Artwork]), UserModule],
   controllers: [ArtistsController],
   providers: [ArtistsService],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, ArtistsService],
 })
 export class ArtistsModule {}

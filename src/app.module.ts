@@ -9,6 +9,7 @@ import { ArtworksModule } from './artworks/artworks.module';
 import { ExhibitionsModule } from './exhibitions/exhibitions.module';
 import { SalesModule } from './sales/sales.module';
 import { ReportsModule } from './reports/reports.module';
+import { DemoSeedModule } from './demo-seed/demo-seed.module';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { RolesGuard } from './auth/roles.guard';
 import { CommonModule } from './common/common.module';
@@ -34,7 +35,7 @@ import { envValidationSchema } from './config/env.validation';
         password: config.get<string>('POSTGRES_PASSWORD'),
         database: config.get<string>('POSTGRES_DB'),
         autoLoadEntities: true,
-        synchronize: true, // to change for migrations or be true in development only
+        synchronize: config.get<string>('NODE_ENV') !== 'production',
       }),
     }),
     AuthModule,
@@ -44,6 +45,7 @@ import { envValidationSchema } from './config/env.validation';
     ExhibitionsModule,
     SalesModule,
     ReportsModule,
+    DemoSeedModule,
   ],
   providers: [
     {
