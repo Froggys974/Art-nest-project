@@ -78,8 +78,6 @@ export class DemoSeedService implements OnApplicationBootstrap {
       UserRole.COLLECTOR,
     );
 
-    // reservePrice 6000: a 5500 sale attempt is rejected, an 8000 one goes
-    // through at the 35% tier (2800 commission / 5200 to the artist).
     await this.artworksService.create(
       {
         title: 'Golden Hour',
@@ -102,9 +100,6 @@ export class DemoSeedService implements OnApplicationBootstrap {
     );
   }
 
-  // A second artist already sitting at 49 active artworks, so creating one
-  // more during the demo lands exactly on the 50-artwork cap, and the next
-  // one after that trips ArtworkLimitPipe live.
   private async seedArtworkLimitFixture(galleryId: number): Promise<void> {
     const limitArtist = await this.artistsService.create(
       { firstName: 'Marcus', lastName: 'Lindqvist', nationality: 'Swedish' },

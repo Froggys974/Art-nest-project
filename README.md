@@ -1,5 +1,7 @@
 # Artwork api for art galleries, built with NestJS and PostgreSQL
 
+Repo: [github.com/Froggys974/Art-nest-project](https://github.com/Froggys974/Art-nest-project)
+
 ## Description
 
 ConsignArt is an API for galleries to manage artists, artworks, exhibitions and sales. Galleries deposit artworks from artists, list them for sale, loan them to exhibitions, and record sales with an automatic commission split between the gallery and the artist. Roles are admin, gallery, artist and collector.
@@ -114,6 +116,10 @@ Once the api is running, Swagger UI is available at `http://localhost:3000/api/d
 ## Health check
 
 `GET /api/v1/health` checks the database connection and is used by the Docker healthcheck.
+
+## Commit history
+
+See [`COMMIT_HISTORY.md`](./COMMIT_HISTORY.md) for the full commit log.
 
 ## Authors
 
